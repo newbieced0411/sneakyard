@@ -1,6 +1,11 @@
 <?php
 
 return [
+    'admin' => [
+        'email' => env('ADMIN_EMAIL', 'admin@sneakyard.ph'),
+        'password' => env('ADMIN_PASSWORD', 'password'),
+    ],
+    'seed_demo_catalog' => (bool) env('SEED_DEMO_CATALOG', true),
     'shipping_fee' => (int) env('SNEAKYARD_SHIPPING_FEE', 15000),
     'free_shipping_threshold' => (int) env('SNEAKYARD_FREE_SHIPPING_THRESHOLD', 300000),
     'notifications' => [

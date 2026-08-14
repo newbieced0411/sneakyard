@@ -4,7 +4,7 @@ services:
     runtime: docker
     plan: free
     region: singapore
-    branch: development
+    branch: master
     autoDeployTrigger: checksPass
     dockerfilePath: ./Dockerfile.render
     healthCheckPath: /up
@@ -53,6 +53,8 @@ services:
         sync: false
       - key: RUN_DATABASE_SEEDER
         value: "true"
+      - key: SEED_DEMO_CATALOG
+        value: "false"
       - key: SNEAKYARD_SHIPPING_FEE
         value: "15000"
       - key: SNEAKYARD_FREE_SHIPPING_THRESHOLD

@@ -72,24 +72,26 @@ The catalog feed is available at `/feeds/meta-products.csv` and can be scheduled
 - Back up the PostgreSQL and uploaded-media volumes.
 - Run migrations during deployment and keep the queue, scheduler, and Reverb services running.
 
-## Free preview deployment: Render + Neon
+## Render deployment: master + Neon
 
-The repository includes a free-tier preview configuration in `render.yaml` and `Dockerfile.render`. It runs Nginx and PHP-FPM in one non-root container, uses an external Neon PostgreSQL database, stores sessions and cache in PostgreSQL, runs queued work synchronously, and disables Reverb and outbound email by default.
+The repository includes a Render configuration in `render.yaml` and `Dockerfile.render`. It runs Nginx and PHP-FPM in one non-root container, uses an external Neon PostgreSQL database, stores sessions and cache in PostgreSQL, runs queued work synchronously, and disables Reverb and outbound email by default.
 
 1. Create a free Neon project in Singapore and copy its pooled connection string.
-2. In Render, create a Blueprint from this repository's `development` branch.
+2. In Render, create or sync the Blueprint from this repository's `master` branch.
 3. Supply the requested `APP_KEY`, `DB_URL`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` values.
 4. Set `DB_URL` to the Neon pooled connection string. Render's automatically assigned HTTPS URL is used for Laravel links and assets.
 
-The startup process automatically applies migrations and the idempotent development seed. Render's free filesystem is ephemeral, so admin-uploaded product media is not durable until an S3-compatible object store is configured. Free-tier queues run inline and realtime Reverb notifications are disabled; these services can be restored when moving to paid worker and WebSocket infrastructure.
+The startup process automatically applies migrations and ensures the configured admin account exists. The production service does not insert the demo catalog. Existing demo products can be removed once from the admin area after promotion. Render's free filesystem is ephemeral, so admin-uploaded product media is not durable until an S3-compatible object store is configured. Free-tier queues run inline and realtime Reverb notifications are disabled; these services can be restored when moving to paid worker and WebSocket infrastructure.
+
+Render Free is appropriate for a preview or low-traffic soft launch, but not for business-critical production: it sleeps when idle, has an ephemeral filesystem, and shares monthly usage limits. Use durable object storage for product uploads and move the web service to a paid instance before relying on it for live sales.
 
 ## Delivery workflow
 
 GitHub Actions validates every push and pull request targeting `development` or `master`. The workflow runs the Laravel test suite against PostgreSQL 18, checks PHP formatting, builds the Vite assets, and verifies the same Docker image used by Render.
 
-- `development` is the staging branch connected to the current free Render service.
-- Render deploys a `development` commit only after the GitHub CI check passes.
-- `master` is reserved for the future production service.
+- `development` is the integration branch for upcoming changes.
+- `master` is the production branch connected to Render.
+- Render deploys a `master` commit only after the GitHub CI check passes.
 - Build changes on a feature branch, open a pull request into `development`, and merge only after CI is green. Promote a tested release by opening a pull request from `development` into `master`.
 
 After syncing the Blueprint, confirm the Render service's **Auto-Deploy** setting shows **After CI Checks Pass**. GitHub branch protection can then require the `Laravel, assets, and deploy image` check before either branch is merged.

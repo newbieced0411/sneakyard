@@ -18,10 +18,17 @@ final class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $adminEmail = (string) config('sneakyard.admin.email');
+        $adminPassword = (string) config('sneakyard.admin.password');
+
         User::query()->updateOrCreate(
-            ['email' => env('ADMIN_EMAIL', 'admin@sneakyard.ph')],
-            ['name' => 'Sneakyard Admin', 'role' => UserRole::Admin, 'password' => Hash::make(env('ADMIN_PASSWORD', 'password'))],
+            ['email' => $adminEmail],
+            ['name' => 'Sneakyard Admin', 'role' => UserRole::Admin, 'password' => Hash::make($adminPassword)],
         );
+
+        if (! config('sneakyard.seed_demo_catalog')) {
+            return;
+        }
 
         $brands = collect(['Sneakyard Select', 'Archive Athletics', 'Heritage Lab'])->mapWithKeys(function (string $name): array {
             $brand = Brand::query()->updateOrCreate(['slug' => Str::slug($name)], ['name' => $name, 'description' => 'Verified pairs sourced through trusted retail partners.', 'is_active' => true]);
