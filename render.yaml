@@ -5,6 +5,7 @@ services:
     plan: free
     region: singapore
     branch: development
+    autoDeployTrigger: checksPass
     dockerfilePath: ./Dockerfile.render
     healthCheckPath: /up
     envVars:

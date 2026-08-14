@@ -83,6 +83,17 @@ The repository includes a free-tier preview configuration in `render.yaml` and `
 
 The startup process automatically applies migrations and the idempotent development seed. Render's free filesystem is ephemeral, so admin-uploaded product media is not durable until an S3-compatible object store is configured. Free-tier queues run inline and realtime Reverb notifications are disabled; these services can be restored when moving to paid worker and WebSocket infrastructure.
 
+## Delivery workflow
+
+GitHub Actions validates every push and pull request targeting `development` or `master`. The workflow runs the Laravel test suite against PostgreSQL 18, checks PHP formatting, builds the Vite assets, and verifies the same Docker image used by Render.
+
+- `development` is the staging branch connected to the current free Render service.
+- Render deploys a `development` commit only after the GitHub CI check passes.
+- `master` is reserved for the future production service.
+- Build changes on a feature branch, open a pull request into `development`, and merge only after CI is green. Promote a tested release by opening a pull request from `development` into `master`.
+
+After syncing the Blueprint, confirm the Render service's **Auto-Deploy** setting shows **After CI Checks Pass**. GitHub branch protection can then require the `Laravel, assets, and deploy image` check before either branch is merged.
+
 ## Stack
 
 Laravel 13, PHP 8.5, Livewire 4, Flux UI Free, Tailwind CSS 4, PostgreSQL 18, Redis 8, Laravel Reverb, Vite 8, Node.js 24, Nginx 1.28, and Docker Compose.
