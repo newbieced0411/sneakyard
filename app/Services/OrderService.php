@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AdminPermission;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Events\OrderPlaced;
+use App\Models\Customer;
 use App\Models\Order;
 use App\Models\ProductVariant;
 use App\Models\User;
@@ -51,10 +53,24 @@ final readonly class OrderService
                 ? 0
                 : (int) config('sneakyard.shipping_fee');
 
+            $customerProfile = Customer::query()->updateOrCreate(
+                ['email' => Str::lower(trim((string) $customer['customer_email']))],
+                [
+                    'user_id' => $user?->id,
+                    'name' => $customer['customer_name'],
+                    'phone' => $customer['customer_phone'],
+                    'shipping_address' => $customer['shipping_address'],
+                    'shipping_city' => $customer['shipping_city'],
+                    'shipping_province' => $customer['shipping_province'],
+                    'shipping_postal_code' => $customer['shipping_postal_code'],
+                ],
+            );
+
             $order = Order::query()->create([
                 'public_id' => (string) Str::uuid(),
                 'order_number' => $this->nextOrderNumber(),
                 'user_id' => $user?->id,
+                'customer_id' => $customerProfile->id,
                 'status' => OrderStatus::Pending,
                 'payment_status' => PaymentStatus::Unpaid,
                 'payment_method' => $customer['payment_method'] ?? 'cod',
@@ -97,9 +113,12 @@ final readonly class OrderService
         $this->cart->clear();
         event(new OrderPlaced($order));
 
-        User::query()->where('role', 'admin')->each(
-            fn (User $admin) => $admin->notify(new OrderPlacedNotification($order)),
-        );
+        User::query()
+            ->with('accessRole')
+            ->where('is_active', true)
+            ->get()
+            ->filter(fn (User $staff): bool => $staff->hasPermission(AdminPermission::ManageOrders))
+            ->each(fn (User $staff) => $staff->notify(new OrderPlacedNotification($order)));
 
         return $order;
     }

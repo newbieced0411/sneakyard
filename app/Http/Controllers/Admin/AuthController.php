@@ -20,13 +20,15 @@ final class AuthController extends Controller
 
     public function store(LoginRequest $request): RedirectResponse
     {
-        if (! Auth::attempt($request->safe()->only(['email', 'password']), $request->boolean('remember'))) {
+        $credentials = [...$request->safe()->only(['email', 'password']), 'is_active' => true];
+
+        if (! Auth::attempt($credentials, $request->boolean('remember'))) {
             return back()->withErrors(['email' => 'The provided credentials do not match our records.'])->onlyInput('email');
         }
 
         $request->session()->regenerate();
 
-        if (! $request->user()?->isAdmin()) {
+        if (! $request->user()?->canAccessAdmin()) {
             Auth::logout();
 
             return back()->withErrors(['email' => 'This account does not have admin access.']);
