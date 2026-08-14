@@ -1,9 +1,13 @@
 <?php
 
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
+use App\Http\Controllers\Admin\CustomerController as AdminCustomerController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\ProfileController as AdminProfileController;
+use App\Http\Controllers\Admin\RoleController as AdminRoleController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MarketingController;
 use App\Http\Controllers\ProductController;
@@ -34,9 +38,21 @@ Route::middleware('guest')->group(function (): void {
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'admin'])->group(function (): void {
     Route::get('/', DashboardController::class)->name('dashboard');
-    Route::resource('products', AdminProductController::class)->except(['show']);
-    Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
-    Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
-    Route::put('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
+    Route::resource('products', AdminProductController::class)->except(['show'])->middleware('can:manage-catalog');
+    Route::middleware('can:manage-orders')->group(function (): void {
+        Route::get('orders', [AdminOrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+        Route::put('orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
+    });
+    Route::middleware('can:manage-customers')->group(function (): void {
+        Route::get('customers', [AdminCustomerController::class, 'index'])->name('customers.index');
+        Route::get('customers/{customer}', [AdminCustomerController::class, 'show'])->name('customers.show');
+        Route::put('customers/{customer}', [AdminCustomerController::class, 'update'])->name('customers.update');
+    });
+    Route::resource('users', AdminUserController::class)->except(['show', 'destroy'])->middleware('can:manage-users');
+    Route::resource('roles', AdminRoleController::class)->except(['show'])->middleware('can:manage-roles');
+    Route::get('profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('profile', [AdminProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [AdminProfileController::class, 'updatePassword'])->name('profile.password');
     Route::post('logout', [AdminAuthController::class, 'destroy'])->name('logout');
 });

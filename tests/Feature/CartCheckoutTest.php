@@ -50,6 +50,8 @@ final class CartCheckoutTest extends TestCase
         $this->assertSame(1399000, $order->subtotal);
         $this->assertSame(0, $order->shipping_total);
         $this->assertDatabaseHas('order_items', ['order_id' => $order->id, 'quantity' => 2, 'size' => '9']);
+        $this->assertDatabaseHas('customers', ['email' => 'juan@example.com', 'name' => 'Juan Dela Cruz']);
+        $this->assertNotNull($order->customer_id);
         $this->assertSame(2, $variant->fresh()->stock_quantity);
         $this->assertSame(0, $cart->count());
         Event::assertDispatched(OrderPlaced::class, fn (OrderPlaced $event) => $event->order->is($order));
