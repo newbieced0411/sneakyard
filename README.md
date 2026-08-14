@@ -72,6 +72,17 @@ The catalog feed is available at `/feeds/meta-products.csv` and can be scheduled
 - Back up the PostgreSQL and uploaded-media volumes.
 - Run migrations during deployment and keep the queue, scheduler, and Reverb services running.
 
+## Free preview deployment: Render + Neon
+
+The repository includes a free-tier preview configuration in `render.yaml` and `Dockerfile.render`. It runs Nginx and PHP-FPM in one non-root container, uses an external Neon PostgreSQL database, stores sessions and cache in PostgreSQL, runs queued work synchronously, and disables Reverb and outbound email by default.
+
+1. Create a free Neon project in Singapore and copy its pooled connection string.
+2. In Render, create a Blueprint from this repository's `development` branch.
+3. Supply the requested `APP_KEY`, `DB_URL`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` values.
+4. Set `DB_URL` to the Neon pooled connection string. Render's automatically assigned HTTPS URL is used for Laravel links and assets.
+
+The startup process automatically applies migrations and the idempotent development seed. Render's free filesystem is ephemeral, so admin-uploaded product media is not durable until an S3-compatible object store is configured. Free-tier queues run inline and realtime Reverb notifications are disabled; these services can be restored when moving to paid worker and WebSocket infrastructure.
+
 ## Stack
 
 Laravel 13, PHP 8.5, Livewire 4, Flux UI Free, Tailwind CSS 4, PostgreSQL 18, Redis 8, Laravel Reverb, Vite 8, Node.js 24, Nginx 1.28, and Docker Compose.

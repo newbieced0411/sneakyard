@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: sneakyard
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: development
+    dockerfilePath: ./Dockerfile.render
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: Sneakyard
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: warning
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_URL
+        sync: false
+      - key: DB_SSLMODE
+        value: require
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_ENCRYPT
+        value: "true"
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: BROADCAST_CONNECTION
+        value: log
+      - key: FILESYSTEM_DISK
+        value: public
+      - key: MAIL_MAILER
+        value: log
+      - key: ORDER_EMAIL_NOTIFICATIONS
+        value: "false"
+      - key: TRUST_PROXIES
+        value: "*"
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: RUN_DATABASE_SEEDER
+        value: "true"
+      - key: SNEAKYARD_SHIPPING_FEE
+        value: "15000"
+      - key: SNEAKYARD_FREE_SHIPPING_THRESHOLD
+        value: "300000"

@@ -1,0 +1,59 @@
+# syntax=docker/dockerfile:1.7
+
+FROM php:8.5.8-fpm-alpine3.23 AS php-base
+
+RUN apk add --no-cache icu-libs libpq libzip \
+    && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS icu-dev libzip-dev postgresql-dev \
+    && docker-php-ext-install -j$(nproc) bcmath intl pcntl pdo_pgsql zip \
+    && apk del .build-deps \
+    && mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+COPY docker/php/opcache.ini /usr/local/etc/php/conf.d/opcache.ini
+WORKDIR /var/www/html
+
+FROM php-base AS vendor
+COPY --from=composer:2.8.12 /usr/bin/composer /usr/bin/composer
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --prefer-dist --no-interaction --no-progress --no-scripts
+COPY . .
+RUN composer dump-autoload --no-dev --classmap-authoritative --no-interaction \
+    && php artisan package:discover --ansi
+
+FROM node:24.13.1-alpine3.23 AS frontend
+WORKDIR /var/www/html
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
+COPY --from=vendor /var/www/html/vendor ./vendor
+COPY resources ./resources
+COPY public ./public
+COPY vite.config.js ./
+ARG VITE_REVERB_APP_KEY=
+ARG VITE_REVERB_HOST=
+ARG VITE_REVERB_PORT=443
+ARG VITE_REVERB_SCHEME=https
+ENV VITE_REVERB_APP_KEY=$VITE_REVERB_APP_KEY \
+    VITE_REVERB_HOST=$VITE_REVERB_HOST \
+    VITE_REVERB_PORT=$VITE_REVERB_PORT \
+    VITE_REVERB_SCHEME=$VITE_REVERB_SCHEME
+RUN npm run build
+
+FROM php-base AS runtime
+
+RUN apk add --no-cache nginx supervisor
+
+COPY --from=vendor --chown=www-data:www-data /var/www/html /var/www/html
+COPY --from=frontend --chown=www-data:www-data /var/www/html/public/build /var/www/html/public/build
+COPY docker/render/nginx.conf /etc/nginx/nginx.render.conf
+COPY docker/render/supervisord.conf /etc/supervisord.conf
+COPY docker/render/start.sh /usr/local/bin/render-start
+
+RUN chmod 0755 /usr/local/bin/render-start \
+    && mkdir -p storage/framework/{cache,sessions,views} storage/logs bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache \
+    && ln -sfn /var/www/html/storage/app/public /var/www/html/public/storage
+
+USER www-data
+EXPOSE 10000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=45s --retries=3 \
+    CMD wget -qO- http://127.0.0.1:10000/up || exit 1
+CMD ["render-start"]
