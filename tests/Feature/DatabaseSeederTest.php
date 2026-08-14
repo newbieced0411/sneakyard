@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Enums\UserRole;
 use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -28,7 +27,8 @@ final class DatabaseSeederTest extends TestCase
 
         $admin = User::query()->where('email', 'owner@sneakyard.ph')->firstOrFail();
 
-        $this->assertSame(UserRole::Admin, $admin->role);
+        $this->assertSame('admin', $admin->role);
+        $this->assertSame('admin', $admin->accessRole->slug);
         $this->assertTrue(Hash::check('production-test-password', $admin->password));
         $this->assertSame(0, Product::query()->count());
     }

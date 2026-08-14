@@ -1,0 +1,14 @@
+<x-layouts.admin :title="$customer->name">
+    <div class="admin-page-heading"><div><p class="eyebrow">Customer record</p><h1>{{ $customer->name }}</h1><p>Customer details, purchase history, and private staff notes.</p></div><flux:button variant="ghost" icon="arrow-left" href="{{ route('admin.customers.index') }}">All customers</flux:button></div>
+    <section class="customer-summary-grid" aria-label="Customer metrics">
+        <article class="stat-card"><span>Total orders</span><strong>{{ $customer->orders_count }}</strong></article>
+        <article class="stat-card"><span>Lifetime value</span><strong>{{ $customer->formatted_lifetime_value }}</strong></article>
+    </section>
+    <div class="customer-detail-grid">
+        <div class="admin-form">
+            <section class="admin-card"><div class="admin-card-heading"><div><h2>Contact & delivery</h2></div></div><dl class="order-meta"><div><dt>Email</dt><dd><a href="mailto:{{ $customer->email }}">{{ $customer->email }}</a></dd></div><div><dt>Phone</dt><dd>@if($customer->phone)<a href="tel:{{ $customer->phone }}">{{ $customer->phone }}</a>@else—@endif</dd></div><div><dt>Address</dt><dd>{{ collect([$customer->shipping_address, $customer->shipping_city, $customer->shipping_province, $customer->shipping_postal_code])->filter()->join(', ') ?: 'No delivery address yet' }}</dd></div></dl></section>
+            <section><div class="admin-card-heading"><div><h2>Order history</h2><p>All orders linked by this customer's email address.</p></div></div><div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Order</th><th>Status</th><th>Items</th><th>Total</th><th>Placed</th></tr></thead><tbody>@forelse($orders as $order)<tr><td><a href="{{ route('admin.orders.show', $order) }}">{{ $order->order_number }}</a></td><td><span class="status-badge {{ $order->status->value }}">{{ $order->status->label() }}</span></td><td>{{ $order->items_count }}</td><td>{{ $order->formatted_total }}</td><td>{{ $order->placed_at?->format('M j, Y') }}</td></tr>@empty<tr><td colspan="5">No orders linked yet.</td></tr>@endforelse</tbody></table></div><div class="pagination-wrap">{{ $orders->links() }}</div></section>
+        </div>
+        <aside class="admin-card"><div class="admin-card-heading"><div><h2>Staff notes</h2><p>Private notes are never shown to the customer.</p></div></div><form class="admin-form" method="POST" action="{{ route('admin.customers.update', $customer) }}">@csrf @method('PUT')<label class="admin-field"><span>Notes</span><textarea class="admin-textarea" name="admin_notes" rows="9" placeholder="Preferences, service context, or follow-up details">{{ old('admin_notes', $customer->admin_notes) }}</textarea>@error('admin_notes')<small class="field-error">{{ $message }}</small>@enderror</label><flux:button variant="primary" type="submit">Save notes</flux:button></form></aside>
+    </div>
+</x-layouts.admin>

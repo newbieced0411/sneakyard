@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Enums\AdminPermission;
 use App\Enums\ProductStatus;
 use App\Enums\UserRole;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
@@ -21,9 +23,25 @@ final class DatabaseSeeder extends Seeder
         $adminEmail = (string) config('sneakyard.admin.email');
         $adminPassword = (string) config('sneakyard.admin.password');
 
+        $adminRole = Role::query()->updateOrCreate(
+            ['slug' => 'admin'],
+            [
+                'name' => 'Administrator',
+                'description' => 'Full access to every Sneakyard administration feature.',
+                'permissions' => array_column(AdminPermission::cases(), 'value'),
+                'is_system' => true,
+            ],
+        );
+
         User::query()->updateOrCreate(
             ['email' => $adminEmail],
-            ['name' => 'Sneakyard Admin', 'role' => UserRole::Admin, 'password' => Hash::make($adminPassword)],
+            [
+                'role_id' => $adminRole->id,
+                'name' => 'Sneakyard Admin',
+                'role' => UserRole::Admin,
+                'password' => Hash::make($adminPassword),
+                'is_active' => true,
+            ],
         );
 
         if (! config('sneakyard.seed_demo_catalog')) {

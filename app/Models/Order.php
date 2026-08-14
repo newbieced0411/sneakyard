@@ -16,7 +16,7 @@ final class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'public_id', 'order_number', 'user_id', 'status', 'payment_status', 'payment_method',
+        'public_id', 'order_number', 'user_id', 'customer_id', 'status', 'payment_status', 'payment_method',
         'customer_name', 'customer_email', 'customer_phone', 'shipping_address', 'shipping_city',
         'shipping_province', 'shipping_postal_code', 'subtotal', 'shipping_total', 'discount_total',
         'grand_total', 'customer_notes', 'admin_notes', 'placed_at',
@@ -38,6 +38,11 @@ final class Order extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 
     public function items(): HasMany
